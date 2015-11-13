@@ -1,0 +1,2 @@
+# iOSImageScalerTools
+一个能够自动生成图片对应2x图3x图和1x图的工具
