@@ -7,7 +7,9 @@
 //
 
 #import "DragDropView.h"
+@interface DragDropView()
 
+@end
 @implementation DragDropView
 - (void)awakeFromNib
 {
@@ -26,6 +28,7 @@
 {
     [self registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
 }
+
 /***
  第二步：当拖动数据进入view时会触发这个函数，我们可以在这个函数里面判断数据是什么类型，来确定要显示什么样的图标。比如接受到的数据是我们想要的NSFilenamesPboardType文件类型，我们就可以在鼠标的下方显示一个“＋”号，当然我们需要返回这个类型NSDragOperationCopy。如果接受到的文件不是我们想要的数据格式，可以返回NSDragOperationNone;这个时候拖动的图标不会有任何改变。
  ***/
@@ -55,7 +58,8 @@
 
 - (void)drawRect:(NSRect)dirtyRect
 {
-    // Drawing code here.
+    [[NSColor colorWithCalibratedRed:228/255.0 green:255/255.0 blue:200/255.0 alpha:1.0] set];
+    NSRectFill(dirtyRect);
 }
 
 @end
