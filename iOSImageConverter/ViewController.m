@@ -67,6 +67,7 @@
 -(void)handleFiles:(NSArray*)fileList
 {
     
+    //其他线程中
     for (int i = 0 ; i < fileList.count; i ++) {
         NSString * filePath = fileList[i];
         NSArray<NSString *> * arr = [filePath componentsSeparatedByString:@"/"];
@@ -93,9 +94,6 @@
     }
 
     [self taskSchedul];
-
-    [self uploadPng:self.taskPool[0]];
-
 }
 #pragma mark -- tableview delegate
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
