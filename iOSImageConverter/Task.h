@@ -8,10 +8,16 @@
 
 #import <Foundation/Foundation.h>
 typedef NS_ENUM(NSUInteger, TaskStatus){
-    TaskStatusWait = 1,
-    TaskStatusDoing = 2,
-    TaskStatusError = 3,
-    TaskStatusComplete = 4
+    TaskStatusWait = 0,
+    TaskStatusDoing = 1,
+    TaskStatusError = 2,
+    TaskStatusComplete = 3
+};
+
+typedef NS_ENUM(NSUInteger, TaskNeed){
+    TaskNeed1x = 1 << 1,
+    TaskNeed2x = 1 << 2,
+    TaskNeed3x = 1 << 3
 };
 
 @interface Task : NSObject
@@ -33,4 +39,5 @@ typedef NS_ENUM(NSUInteger, TaskStatus){
 @property (nonatomic,assign)        TaskStatus statuesDown2x;
 @property (nonatomic,assign)        TaskStatus statuesDown3x;
 
+@property (nonatomic,assign)        TaskNeed taskNeed;
 @end

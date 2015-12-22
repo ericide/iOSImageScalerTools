@@ -106,18 +106,60 @@
     Task *job=self.taskPool[row];
     NSString * identifier=    [tableColumn identifier];
     if (identifier.intValue==0) {
-        return job.fileName;
-    }
-    else if (identifier.intValue==1)
-    {
-        if (job.Status & TaskStatusWait) {
-            return @"等待中";
+        return [NSString stringWithFormat:@"%@.%@",job.fileName,job.type];
+    } else if (identifier.intValue == 1 ) {
+        if (job.Status == TaskStatusWait) {
+            return @"等待";
         }
-        if (job.Status & TaskStatusDoing) {
-            return @"上传中";
+        if (job.Status == TaskStatusDoing) {
+            return @"进行中";
         }
-        if (job.Status & TaskStatusComplete) {
-            return @"下载完成";
+        if (job.Status == TaskStatusComplete) {
+            return @"完成";
+        }
+        return @"下载错误";
+    } else if (identifier.intValue == 2 ) {
+        if (job.statuesUpload == TaskStatusWait) {
+            return @"等待";
+        }
+        if (job.statuesUpload == TaskStatusDoing) {
+            return @"进行中";
+        }
+        if (job.statuesUpload == TaskStatusComplete) {
+            return @"完成";
+        }
+        return @"下载错误";
+    } else if (identifier.intValue == 3 ) {
+        if (job.statuesDown1x == TaskStatusWait) {
+            return @"等待";
+        }
+        if (job.statuesDown1x == TaskStatusDoing) {
+            return @"进行中";
+        }
+        if (job.statuesDown1x == TaskStatusComplete) {
+            return @"完成";
+        }
+        return @"下载错误";
+    } else if (identifier.intValue == 4 ){
+        if (job.statuesDown2x == TaskStatusWait) {
+            return @"等待";
+        }
+        if (job.statuesDown2x == TaskStatusDoing) {
+            return @"进行中";
+        }
+        if (job.statuesDown2x == TaskStatusComplete) {
+            return @"完成";
+        }
+        return @"下载错误";
+    } else if (identifier.intValue == 5 ) {
+        if (job.statuesDown3x == TaskStatusWait) {
+            return @"等待";
+        }
+        if (job.statuesDown3x == TaskStatusDoing) {
+            return @"进行中";
+        }
+        if (job.statuesDown3x == TaskStatusComplete) {
+            return @"完成";
         }
         return @"下载错误";
     }
@@ -156,16 +198,25 @@
             Task * task = self.taskPool[i];
             if (task.Status == TaskStatusWait) {
                 task.Status = TaskStatusDoing;
-                [self uploadPng:task];
-                doingCount --;
-                if (doingCount == 0) {
+                if (self.check1x.state ) {
+                    task.taskNeed |= TaskNeed1x;
+                }
+                if (self.check2x.state ) {
+                    task.taskNeed |= TaskNeed2x;
+                }
+                if (self.check3x.state ) {
+                    task.taskNeed |= TaskNeed3x;
+                }
+                task.statuesUpload = TaskStatusDoing;
+                [self.taskTableView reloadData];
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                    [self uploadPng:task];
+                });
+                if (--doingCount == 0) {
                     break;
                 }
             }
         }
-        
-        [self.taskTableView reloadData];
-        
     });
 }
 #pragma mark -- 图片处理
@@ -190,20 +241,28 @@
         job.width = [[output objectForKey:@"width"] floatValue];
         job.height = [[output objectForKey:@"height"] floatValue];
         job.compressRatio = [[output objectForKey:@"ratio"] floatValue];
-        NSLog(@"%zd%zd%zd",self.check1x.state ,self.check2x.state ,self.check3x.state);
-        if (self.check1x.state ) {
+
+        if (job.taskNeed & TaskNeed1x) {
+            job.statuesDown1x = TaskStatusDoing;
             [self downloadImage:job type:Download1x];
         }
-        if (self.check2x.state ) {
+        if (job.taskNeed & TaskNeed2x) {
+            job.statuesDown2x = TaskStatusDoing;
             [self downloadImage:job type:Download2x];
         }
-        if (self.check3x.state ) {
+        if (job.taskNeed & TaskNeed3x) {
+            job.statuesDown3x = TaskStatusDoing;
             [self downloadImage:job type:Download3x];
         }
-        [self taskSchedul];
+        job.statuesUpload = TaskStatusComplete;
+        [self.taskTableView reloadData];
 
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-        NSLog(@"出错了");
+        dispatch_async(dispatch_get_main_queue(), ^{
+            job.statuesUpload = TaskStatusError;
+            job.Status = TaskStatusError;
+            [self.taskTableView reloadData];
+        });
     }];
     
     [[AFHTTPRequestOperationManager manager].operationQueue addOperation:op];
@@ -238,14 +297,37 @@
         [address appendString:@"iOSImageConverter"];
         NSFileManager *fileManager = [NSFileManager defaultManager];
         [fileManager createDirectoryAtPath:address attributes:nil];
+        NSString * nx = nil;
+        if (type == Download1x) {
+            nx = @"";
+            job.statuesDown1x = TaskStatusComplete;
+        }
+        if (type == Download2x) {
+            nx = @"@2x";
+            job.statuesDown2x = TaskStatusComplete;
+        }
+        if (type == Download3x) {
+            nx = @"@3x";
+            job.statuesDown3x = TaskStatusComplete;
+        }
         NSData *newFileData=(NSData *)responseObject;
-        NSDictionary * nxDic = @{[@(Download1x) stringValue]:@"",
-                                 [@(Download2x) stringValue]:@"@2x",
-                                 [@(Download3x) stringValue]:@"@3x"};
-        [newFileData writeToFile:[NSString stringWithFormat:@"%@/%@%@.%@",address,job.fileName,nxDic[[@(type) stringValue]],job.type] atomically:YES];
+        [newFileData writeToFile:[NSString stringWithFormat:@"%@/%@%@.%@",address,job.fileName,nx,job.type] atomically:YES];
+        [self.taskTableView reloadData];
         [self taskSchedul];
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (type == Download1x) {
+                job.statuesDown1x = TaskStatusError;
+            }
+            if (type == Download2x) {
+                job.statuesDown2x = TaskStatusError;
+            }
+            if (type == Download3x) {
+                job.statuesDown3x = TaskStatusError;
+            }
+            [self.taskTableView reloadData];
+            [self taskSchedul];
+        });
     }];
     
     [[AFHTTPRequestOperationManager manager].operationQueue addOperation:requestOperation];
