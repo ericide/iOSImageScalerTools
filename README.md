@@ -3,6 +3,7 @@
 
 再也不用担心美工不给你切图了！
 
-![Alt Text](https://github.com/jlideasoft/pictures/blob/master/iosimagetools.gif)
+接入了tinypng接口
+#![Alt Text](https://github.com/jlideasoft/pictures/blob/master/iosimagetools.gif)
 
 
