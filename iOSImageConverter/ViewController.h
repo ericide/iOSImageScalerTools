@@ -9,14 +9,19 @@
 #import <Cocoa/Cocoa.h>
 #import "DragDropView.h"
 
-typedef NS_ENUM(NSUInteger, ImageType){
-    Download1x = 1,
-    Download2x = 2,
-    Download3x = 3,
-};
-
-@interface ViewController : NSViewController<DragDropViewDelegate,NSTableViewDataSource,NSTableViewDelegate>
+@interface ViewController : NSViewController<DragDropViewDelegate>
 @property (strong) IBOutlet DragDropView *contentView;
+
+@property (weak) IBOutlet NSProgressIndicator *progress;
+
+@property (weak) IBOutlet NSTextField *tipLabel;
+
+
+@property (weak) IBOutlet NSTextField *x2textField;
+@property (weak) IBOutlet NSButton *x2boxBtn;
+
+@property (weak) IBOutlet NSTextField *x3textField;
+@property (weak) IBOutlet NSButton *x3boxBtn;
 
 @end
 
